@@ -1,0 +1,95 @@
+#include <SoftwareSerial.h>
+#include <ESP8266WiFi.h>
+
+//Eeshababar Eesha1234
+String apiWritekey = "CSCGBP2UQVBDIMBJ"; 
+const char* ssid = "Eesha";
+const char* password = "Password123" ;
+
+const char* server = "api.thingspeak.com";
+//float resolution=3.3/1023;
+String content = "";
+char character;
+String tsData = apiWritekey;
+WiFiClient client;
+
+//D7 = 13; RX 3
+//D8 = 15; TX 1
+SoftwareSerial NodeMCU(D2,D3);
+
+void setup(){
+   //Serial.begin(9600);
+   Serial.begin(115200);
+   NodeMCU.begin(115200);
+   pinMode(D2,INPUT);
+   pinMode(D3,OUTPUT);
+
+ // randomSeed(42);
+  WiFi.disconnect();
+  delay(10);
+  WiFi.begin(ssid, password);
+
+  Serial.println();
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.print("NodeMcu connected to wifi...");
+  Serial.println(ssid);
+  Serial.println();
+}
+
+void loop(){
+
+
+  while(NodeMCU.available()) {
+      character = NodeMCU.read();
+      content.concat(character);
+  }
+  if (content != "") {
+    Serial.println(content);
+  }
+   //delay(100);
+ 
+//randomNumber = random(0,1000);
+  if (client.connect(server,80)) {
+    
+    tsData +="&field1=";
+    tsData += content;
+    tsData += "\r\n\r\n";
+
+    client.print("POST /update HTTP/1.1\n");
+    client.print("Host: api.thingspeak.com\n");
+    client.print("Connection: close\n");
+    client.print("X-THINGSPEAKAPIKEY: "+apiWritekey+"\n");
+    client.print("Content-Type: application/x-www-form-urlencoded\n");
+    client.print("Content-Length: ");
+    client.print(tsData.length());
+    client.print("\n\n");
+    client.println(tsData);
+
+   // Serial.print("Random Number: ");
+    Serial.print(content);
+    
+    //Serial.println("uploaded to Thingspeak server....");
+  }
+  client.stop();
+
+  //Serial.println("Waiting to upload next reading...");
+  Serial.println();
+//  tsData = "\0";
+  content = "\0";
+  delay(1);
+//  randomNumber = 0;
+
+
+
+   
+}
